@@ -1,4 +1,9 @@
+using Microsoft.EntityFrameworkCore;
+using EyeTrainer.Api.Data;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<EyeTrainerApiContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("EyeTrainerApiContext") ?? throw new InvalidOperationException("Connection string 'EyeTrainerApiContext' not found.")));
 
 // Add services to the container.
 
