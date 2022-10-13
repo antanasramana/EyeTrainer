@@ -1,89 +1,101 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using EyeTrainer.Api.Constants;
+using EyeTrainer.Api.Contracts.EyeTrainingPlan;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EyeTrainer.Api.Data;
+using EyeTrainer.Api.Filters;
 using EyeTrainer.Api.Models;
+using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EyeTrainer.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/Appointments/{appointmentId}/[controller]")]
     [ApiController]
+    [AppointmentExistenceFilter]
+    [Authorize(Policy = Policy.RequireRegularRights)]
     public class EyeTrainingPlansController : ControllerBase
     {
         private readonly EyeTrainerApiContext _context;
+        private readonly IMapper _mapper;
 
-        public EyeTrainingPlansController(EyeTrainerApiContext context)
+        public EyeTrainingPlansController(EyeTrainerApiContext context,
+            IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
-        // GET: api/EyeTrainingPlans
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<EyeTrainingPlan>>> GetEyeTrainingPlan()
+        public async Task<ActionResult<IEnumerable<EyeTrainingPlanResponse>>> GetEyeTrainingPlans(int appointmentId)
         {
-            return await _context.EyeTrainingPlan.ToListAsync();
+            var eyeTrainingPlans = await _context.EyeTrainingPlan
+                .Where(plan => plan.AppointmentId == appointmentId)
+                .ToListAsync();
+
+            var eyeTrainingPlansResponse = _mapper.Map<IEnumerable<EyeTrainingPlanResponse>>(eyeTrainingPlans);
+
+            return Ok(eyeTrainingPlansResponse);
         }
 
-        // GET: api/EyeTrainingPlans/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<EyeTrainingPlan>> GetEyeTrainingPlan(int id)
+        [HttpGet("{eyeTrainingPlanId}")]
+        public async Task<ActionResult<EyeTrainingPlanResponse>> GetEyeTrainingPlan(int appointmentId, int eyeTrainingPlanId)
         {
-            var eyeTrainingPlan = await _context.EyeTrainingPlan.FindAsync(id);
+            var eyeTrainingPlan = await GetEyeTrainingPlanData(appointmentId, eyeTrainingPlanId);
 
-            if (eyeTrainingPlan == null)
-            {
-                return NotFound();
-            }
+            if (eyeTrainingPlan == null) return NotFound();
 
-            return eyeTrainingPlan;
+            var eyeTrainingPlanResponse = _mapper.Map<EyeTrainingPlanResponse>(eyeTrainingPlan);
+
+            return eyeTrainingPlanResponse;
         }
 
-        // PUT: api/EyeTrainingPlans/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutEyeTrainingPlan(int id, EyeTrainingPlan eyeTrainingPlan)
+        [HttpPatch("{eyeTrainingPlanId}")]
+        [Authorize(Policy = Policy.RequireOwner)]
+        public async Task<IActionResult> PatchEyeTrainingPlan(int appointmentId, int eyeTrainingPlanId, 
+            JsonPatchDocument<PatchEyeTrainingPlanRequest> patchEyeTrainingPlanRequest)
         {
-            if (id != eyeTrainingPlan.Id)
-            {
-                return BadRequest();
-            }
+            var eyeTrainingPlan = await GetEyeTrainingPlanData(appointmentId, eyeTrainingPlanId);
 
-            _context.Entry(eyeTrainingPlan).State = EntityState.Modified;
+            if (patchEyeTrainingPlanRequest == null) return BadRequest();
+            if (eyeTrainingPlan == null) BadRequest("No such eye training plan with provided id");
+            if (eyeTrainingPlan.Id != eyeTrainingPlanId) return BadRequest();
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!EyeTrainingPlanExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            var patchEyeTrainingPlan = _mapper.Map<PatchEyeTrainingPlanRequest>(eyeTrainingPlan);
+
+            patchEyeTrainingPlanRequest.ApplyTo(patchEyeTrainingPlan);
+
+            _mapper.Map<PatchEyeTrainingPlanRequest, EyeTrainingPlan>(patchEyeTrainingPlan, eyeTrainingPlan);
+
+            _context.Update(eyeTrainingPlan);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/EyeTrainingPlans
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<EyeTrainingPlan>> PostEyeTrainingPlan(EyeTrainingPlan eyeTrainingPlan)
+        public async Task<ActionResult<EyeTrainingPlanResponse>> PostEyeTrainingPlan(int appointmentId,
+            PostEyeTrainingPlanRequest postEyeTrainingPlanRequest)
         {
+            var eyeTrainingPlan = _mapper.Map<EyeTrainingPlan>(postEyeTrainingPlanRequest);
+            eyeTrainingPlan.AppointmentId = appointmentId;
+
             _context.EyeTrainingPlan.Add(eyeTrainingPlan);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetEyeTrainingPlan", new { id = eyeTrainingPlan.Id }, eyeTrainingPlan);
+            var eyeTrainingPlanResponse = _mapper.Map<EyeTrainingPlanResponse>(eyeTrainingPlan);
+
+            return CreatedAtAction("GetEyeTrainingPlan", new { appointmentId = appointmentId, eyeTrainingPlanId = eyeTrainingPlanResponse.Id }, eyeTrainingPlanResponse);
         }
 
         // DELETE: api/EyeTrainingPlans/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteEyeTrainingPlan(int id)
+        [HttpDelete("{eyeTrainingPlanId}")]
+        [Authorize(Policy = Policy.RequireOwner)]
+        public async Task<IActionResult> DeleteEyeTrainingPlan(int appointmentId, int eyeTrainingPlanId)
         {
-            var eyeTrainingPlan = await _context.EyeTrainingPlan.FindAsync(id);
+            var eyeTrainingPlan = await GetEyeTrainingPlanData(appointmentId, eyeTrainingPlanId);
+
             if (eyeTrainingPlan == null)
             {
                 return NotFound();
@@ -95,9 +107,13 @@ namespace EyeTrainer.Api.Controllers
             return NoContent();
         }
 
-        private bool EyeTrainingPlanExists(int id)
+        private async Task<EyeTrainingPlan> GetEyeTrainingPlanData(int appointmentId, int eyeTrainingPlanId)
         {
-            return _context.EyeTrainingPlan.Any(e => e.Id == id);
+            var eyeTrainingPlan = await _context.EyeTrainingPlan
+                .Where(plan => plan.AppointmentId == appointmentId)
+                .FirstOrDefaultAsync(plan => plan.Id == eyeTrainingPlanId);
+
+            return eyeTrainingPlan;
         }
     }
 }

@@ -1,14 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using EyeTrainer.Api.Constants;
 
 namespace EyeTrainer.Api.Models
 {
     public class User
     {
         public int Id { get; set; }
-
-        [MaxLength(50)]
-        public string Username { get; set; }
-        public string Salt { get; set; }
         public string HashedPassword { get; set; }
 
         [MaxLength(50)]
@@ -21,12 +18,8 @@ namespace EyeTrainer.Api.Models
         public string Email { get; set; }
         public DateTime DateOfBirth { get; set; }
         public DateTime DateOfRegistration { get; set; }
-        public int? RoleId { get; set; }
-        public int? DoctorId { get; set; }
-        public int? PatientId { get; set; }
-
-        public Role Role { get; set; }
-        public Doctor Doctor { get; set; }
-        public Patient Patient { get; set; }
+        public string Role { get; set; } = Roles.Patient;
+        public ICollection<Appointment> PatientVisits { get; set; }
+        public ICollection<Appointment> DoctorVisits { get; set; }
     }
 }

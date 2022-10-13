@@ -12,25 +12,18 @@ namespace EyeTrainer.Api.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            var initialRoles = CreateInitialRoles();
-            modelBuilder.Entity<Role>().HasData(initialRoles);
-        }
+            modelBuilder.Entity<Appointment>()
+                .HasOne(visit => visit.Doctor)
+                .WithMany(user => user.DoctorVisits);
 
-        private static IEnumerable<Role> CreateInitialRoles()
-        {
-            yield return new Role { Id = 1, Name = "Administrator" };
-            yield return new Role { Id = 2, Name = "Doctor" };
-            yield return new Role { Id = 3, Name = "Patient" };
+            modelBuilder.Entity<Appointment>()
+                .HasOne(visit => visit.Patient)
+                .WithMany(user => user.PatientVisits);
         }
 
         public DbSet<User> User { get; set; } = default!;
-
-        public DbSet<Doctor> Doctor { get; set; }
-
         public DbSet<EyeTrainingPlan> EyeTrainingPlan { get; set; }
-
-        public DbSet<Patient> Patient { get; set; }
-
         public DbSet<EyeExercise> EyeExercise { get; set; }
+        public DbSet<Appointment> Appointment { get; set; }
     }
 }

@@ -1,89 +1,111 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using EyeTrainer.Api.Constants;
+using EyeTrainer.Api.Contracts.EyeExercise;
 using EyeTrainer.Api.Data;
+using EyeTrainer.Api.Filters;
 using EyeTrainer.Api.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EyeTrainer.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/Appointments/{appointmentId}/EyeTrainingPlans/{eyeTrainingPlanId}/[controller]")]
     [ApiController]
+    [EyeTrainingPlanExistenceFilter]
+    [Authorize(Policy = Policy.RequireRegularRights)]
     public class EyeExercisesController : ControllerBase
     {
         private readonly EyeTrainerApiContext _context;
+        private readonly IMapper _mapper;
 
-        public EyeExercisesController(EyeTrainerApiContext context)
+        public EyeExercisesController(EyeTrainerApiContext context,
+            IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         // GET: api/EyeExercises
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<EyeExercise>>> GetEyeExercise()
+        public async Task<ActionResult<IEnumerable<EyeExerciseResponse>>> GetEyeExercise(int appointmentId, int eyeTrainingPlanId)
         {
-            return await _context.EyeExercise.ToListAsync();
+            var eyeTrainingPlan = await GetEyeTrainingPlan(appointmentId, eyeTrainingPlanId);
+            var eyeExercises = eyeTrainingPlan.EyeExercises;
+
+            var eyeExercisesResponses = _mapper.Map<IEnumerable<EyeExerciseResponse>>(eyeExercises);
+
+            return Ok(eyeExercisesResponses);
         }
 
-        // GET: api/EyeExercises/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<EyeExercise>> GetEyeExercise(int id)
+        [HttpGet("{eyeExerciseId}")]
+        public async Task<ActionResult<EyeExerciseResponse>> GetEyeExercise(int appointmentId, int eyeTrainingPlanId, int eyeExerciseId)
         {
-            var eyeExercise = await _context.EyeExercise.FindAsync(id);
+            var eyeTrainingPlan = await GetEyeTrainingPlan(appointmentId, eyeTrainingPlanId);
+            
+            var eyeExercise = eyeTrainingPlan.EyeExercises
+                .FirstOrDefault(e => e.Id == eyeExerciseId);
+            if (eyeExercise == null) return NotFound();
 
-            if (eyeExercise == null)
-            {
-                return NotFound();
-            }
+            var eyeExerciseResponse = _mapper.Map<EyeExerciseResponse>(eyeExercise);
 
-            return eyeExercise;
+            return eyeExerciseResponse;
         }
 
-        // PUT: api/EyeExercises/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutEyeExercise(int id, EyeExercise eyeExercise)
+        [HttpPatch("{eyeExerciseId}")]
+        [Authorize(Policy = Policy.RequireOwner)]
+        public async Task<IActionResult> PatchEyeExercise(int appointmentId, 
+            int eyeTrainingPlanId, 
+            int eyeExerciseId, 
+            JsonPatchDocument<PatchEyeExerciseRequest> patchEyeExerciseRequest)
         {
-            if (id != eyeExercise.Id)
-            {
-                return BadRequest();
-            }
+            var eyeTrainingPlan = await GetEyeTrainingPlan(appointmentId, eyeTrainingPlanId);
 
-            _context.Entry(eyeExercise).State = EntityState.Modified;
+            var eyeExercise = eyeTrainingPlan.EyeExercises
+                .FirstOrDefault(e => e.Id == eyeExerciseId);
+            if (eyeExercise == null) BadRequest("No such eye exercise with provided id");
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!EyeExerciseExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            var patchEyeExercise = _mapper.Map<PatchEyeExerciseRequest>(eyeExercise);
+
+            patchEyeExerciseRequest.ApplyTo(patchEyeExercise);
+
+            _mapper.Map<PatchEyeExerciseRequest, EyeExercise>(patchEyeExercise, eyeExercise);
+
+            _context.Update(eyeExercise);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/EyeExercises
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<EyeExercise>> PostEyeExercise(EyeExercise eyeExercise)
+        public async Task<ActionResult<EyeExerciseResponse>> PostEyeExercise(
+            int appointmentId,
+            int eyeTrainingPlanId, 
+            PostEyeExerciseRequest postEyeExerciseRequest)
         {
+            var eyeExercise = _mapper.Map<EyeExercise>(postEyeExerciseRequest);
+
+            var eyeTrainingPlan = await GetEyeTrainingPlan(appointmentId, eyeTrainingPlanId);
+
+            eyeTrainingPlan.EyeExercises.Add(eyeExercise);
+
+            _context.Update(eyeTrainingPlan);
             _context.EyeExercise.Add(eyeExercise);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetEyeExercise", new { id = eyeExercise.Id }, eyeExercise);
+            var eyeExerciseResponse = _mapper.Map<EyeExerciseResponse>(eyeExercise);
+
+            return CreatedAtAction("GetEyeExercise", new { appointmentId = appointmentId, eyeTrainingPlanId = eyeTrainingPlanId, eyeExerciseId = eyeExercise.Id }, eyeExerciseResponse);
         }
 
-        // DELETE: api/EyeExercises/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteEyeExercise(int id)
+        [HttpDelete("{eyeExerciseId}")]
+        [Authorize(Policy = Policy.RequireOwner)]
+        public async Task<IActionResult> DeleteEyeExercise(int appointmentId,
+            int eyeTrainingPlanId,
+            int eyeExerciseId)
         {
-            var eyeExercise = await _context.EyeExercise.FindAsync(id);
+            var eyeExercise = await _context.EyeExercise.FindAsync(eyeExerciseId);
             if (eyeExercise == null)
             {
                 return NotFound();
@@ -95,9 +117,16 @@ namespace EyeTrainer.Api.Controllers
             return NoContent();
         }
 
-        private bool EyeExerciseExists(int id)
+        private async Task<EyeTrainingPlan> GetEyeTrainingPlan(int appointmentId, int eyeTrainingPlanId)
         {
-            return _context.EyeExercise.Any(e => e.Id == id);
+            var appointment = await _context.Appointment
+                .Include(app => app.EyeTrainingPlans)
+                .ThenInclude(plan => plan.EyeExercises)
+                .FirstAsync(app => app.Id == appointmentId);
+
+            var eyeTrainingPlan = appointment.EyeTrainingPlans
+                .FirstOrDefault(plan => plan.Id == eyeTrainingPlanId);
+            return eyeTrainingPlan;
         }
     }
 }

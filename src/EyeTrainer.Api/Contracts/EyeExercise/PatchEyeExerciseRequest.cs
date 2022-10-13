@@ -1,12 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace EyeTrainer.Api.Models
+﻿namespace EyeTrainer.Api.Contracts.EyeExercise
 {
-    public class EyeExercise
+    public class PatchEyeExerciseRequest
     {
-        public int Id { get; set; }
-
-        [MaxLength(50)]
         public string Name { get; set; }
         public string Description { get; set; }
         public int TimesPerSet { get; set; }
@@ -14,6 +9,5 @@ namespace EyeTrainer.Api.Models
         public double RestTimeSeconds { get; set; }
 
         public int? EyeTrainingPlanId { get; set; }
-        public EyeTrainingPlan EyeTrainingPlan { get; set; }
     }
 }
