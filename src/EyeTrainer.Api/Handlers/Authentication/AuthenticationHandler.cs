@@ -3,12 +3,12 @@ using EyeTrainer.Api.Models;
 using Microsoft.EntityFrameworkCore;
 using BCryptNet = BCrypt.Net.BCrypt;
 
-namespace EyeTrainer.Api.Handlers
+namespace EyeTrainer.Api.Handlers.Authentication
 {
     public interface IAuthenticationHandler
     {
         Task<User> TryRegisterUser(User user, string password);
-        Task<string> LoginUser(string email, string password);
+        Task<AuthenticatedUser> LoginUser(string email, string password);
     }
 
     public class AuthenticationHandler : IAuthenticationHandler
@@ -36,7 +36,7 @@ namespace EyeTrainer.Api.Handlers
             return user;
         }
 
-        public async Task<string> LoginUser (string email, string password)
+        public async Task<AuthenticatedUser> LoginUser(string email, string password)
         {
             var existingUser = await _context.User.FirstOrDefaultAsync(u => u.Email == email);
             if (existingUser is null) return null;
@@ -46,7 +46,7 @@ namespace EyeTrainer.Api.Handlers
 
             var token = _tokenGenerator.GenerateToken(existingUser.Id, existingUser.Role);
 
-            return token;
+            return new AuthenticatedUser{ User = existingUser, Token = token };
         }
     }
 }

@@ -13,6 +13,7 @@ namespace EyeTrainer.Api.Bootstrap
                 cfg.AddProfile(new AppointmentMapProfile());
                 cfg.AddProfile(new EyeTrainingPlanProfile());
                 cfg.AddProfile(new EyeExerciseProfile());
+                cfg.AddProfile(new AuthenticatedUserProfile());
             });
             serviceCollection.AddSingleton(config.CreateMapper());
         }

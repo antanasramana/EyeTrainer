@@ -1,7 +1,8 @@
 ﻿using EyeTrainer.Api.Handlers;
+using EyeTrainer.Api.Handlers.Authentication;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using IAuthenticationHandler = EyeTrainer.Api.Handlers.IAuthenticationHandler;
+using IAuthenticationHandler = EyeTrainer.Api.Handlers.Authentication.IAuthenticationHandler;
 
 namespace EyeTrainer.Api.Bootstrap
 {

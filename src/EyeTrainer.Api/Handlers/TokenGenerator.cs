@@ -26,7 +26,7 @@ namespace EyeTrainer.Api.Handlers
             var secretKey = _configuration.GetSection("Authentication:TokenSecret").Value;
             var secretKeyBytes = Encoding.ASCII.GetBytes(secretKey);
 
-            const int defaultExpiryMinutes = 20;
+            const int defaultExpiryMinutes = 60;
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {

@@ -36,6 +36,17 @@ namespace EyeTrainer.Api.Bootstrap
                     policy => policy.AddRequirements(new RequireOwnerRequirement()));
             });
 
+            services.AddCors(options =>
+            {
+                options.AddPolicy(Policy.DevelopmentCors, builder =>
+                {
+                    builder.AllowAnyOrigin()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .SetIsOriginAllowed((x) => true);
+                });
+            });
+
             services.AddTransient<IAuthorizationHandler, RequireOwnerHandler>();
             services.AddTransient<IAuthorizationHandler, AdministratorPrivilegesHandler>();
         }

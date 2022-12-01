@@ -101,6 +101,8 @@ namespace EyeTrainer.Api.Data
                 new Appointment
                 {
                     Date = new DateTime(2022, 10, 12, 12, 0, 0),
+                    Address = "Savanorių pr. 284, 49476 Kaunas",
+                    Description = "Skauda akis, jaučiasi nuovargis. Norima pasikonsultuoti dėl akių pratimų, kurie padėtų jas pailsinti.",
                     IsConfirmed = true,
                     Doctor = doctor,
                     Patient = firstPatient
@@ -109,6 +111,8 @@ namespace EyeTrainer.Api.Data
                 new Appointment
                 {
                     Date = new DateTime(2022, 10, 13, 13, 0, 0),
+                    Address = "A. Baranausko g. 15, 50249 Kaunas",
+                    Description = "Akys silpsta kiekvienais metais. Ar būtų galima sudaryti pratimus, kurie jas stiprintų?",
                     IsConfirmed = true,
                     Doctor = doctor,
                     Patient = secondPatient
@@ -134,6 +138,7 @@ namespace EyeTrainer.Api.Data
                 {
                     StartDate = new DateTime(2022, 10, 12, 12, 0, 0),
                     EndDate = new DateTime(2022, 10, 19, 12, 0, 0),
+                    ImageLink = "https://medpharm.co.za/wp-content/uploads/2018/10/shutterstock_617982098.jpg",
                     TimesPerDay = 1,
                     Description = "Vakarinis akių treniravimo planas skirtas stiprinti ir atpalaiduoti akis",
                     Appointment = appointment
@@ -143,6 +148,7 @@ namespace EyeTrainer.Api.Data
                 {
                     StartDate = new DateTime(2022, 10, 12, 12, 0, 0),
                     EndDate = new DateTime(2022, 10, 19, 12, 0, 0),
+                    ImageLink = "https://d31g6oeq0bzej7.cloudfront.net/Assets/image/jpeg/6f9cd14f-78ac-4032-a84e-0748180922ec.jpg",
                     TimesPerDay = 2,
                     Description = "Akių treniravimo planas skirtas akių spazmams malšinti",
                     Appointment = appointment
@@ -152,6 +158,7 @@ namespace EyeTrainer.Api.Data
                 {
                     StartDate = new DateTime(2022, 10, 12, 12, 0, 0),
                     EndDate = new DateTime(2022, 10, 19, 12, 0, 0),
+                    ImageLink = "https://img.webmd.com/dtmcms/live/webmd/consumer_assets/site_images/article_thumbnails/other/dry_eyes_alt1_other/650x350_dry_eyes_alt1_other.jpg",
                     TimesPerDay = 5,
                     Description = "Akių treniravimo planas skirtas sausoms akims, ypač tinkantis atlikti pertraukų metu po darbo su kompiuteriu",
                     Appointment = appointment

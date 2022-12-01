@@ -4,9 +4,9 @@ using EyeTrainer.Api.Contracts.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EyeTrainer.Api.Data;
-using EyeTrainer.Api.Handlers;
 using EyeTrainer.Api.Models;
 using Microsoft.AspNetCore.Authorization;
+using EyeTrainer.Api.Handlers.Authentication;
 
 namespace EyeTrainer.Api.Controllers
 {
@@ -48,14 +48,14 @@ namespace EyeTrainer.Api.Controllers
         [HttpPost("Login")]
         public async Task<ActionResult<LoginUserResponse>> LoginUser(LoginUserRequest loginUserRequest)
         {
-            var token = await _authenticationHandler.LoginUser(loginUserRequest.Email, loginUserRequest.Password);
+            var authenticatedUser = await _authenticationHandler.LoginUser(loginUserRequest.Email, loginUserRequest.Password);
 
-            if (token is null)
+            if (authenticatedUser is null)
             {
                 return Unauthorized();
             }
 
-            var loginUserResponse = new LoginUserResponse { Token = token };
+            var loginUserResponse = _mapper.Map<LoginUserResponse>(authenticatedUser);
 
             return Ok(loginUserResponse);
         }

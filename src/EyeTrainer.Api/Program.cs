@@ -2,6 +2,7 @@ using EyeTrainer.Api.Bootstrap;
 using Microsoft.EntityFrameworkCore;
 using EyeTrainer.Api.Data;
 using Hellang.Middleware.ProblemDetails;
+using EyeTrainer.Api.Constants;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<EyeTrainerApiContext>(options =>
@@ -28,10 +29,10 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.CreateInitialData();
 }
 
-
+app.UseCors(Policy.DevelopmentCors);
+app.CreateInitialData();
 app.UseHttpsRedirection();
 app.UseProblemDetails();
 app.UseAuthentication();
