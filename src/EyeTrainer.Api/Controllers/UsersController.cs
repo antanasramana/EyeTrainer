@@ -59,25 +59,5 @@ namespace EyeTrainer.Api.Controllers
 
             return Ok(loginUserResponse);
         }
-
-        [HttpGet]
-        [Authorize(Policy = Roles.Administrator)]
-        public async Task<ActionResult<IEnumerable<User>>> GetUser()
-        {
-            return await _context.User.ToListAsync();
-        }
-
-        [HttpDelete("{id}")]
-        [Authorize(Roles = Roles.Administrator)]
-        public async Task<IActionResult> DeleteUser(int id)
-        {
-            var user = await _context.User.FindAsync(id);
-            if (user == null) return NotFound();
-
-            _context.User.Remove(user);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
     }
 }
